@@ -3,6 +3,10 @@ import { resolve } from 'path';
 
 export default defineConfig({
   build: {
+    // CSS minification is disabled because this machine's node_modules is
+    // missing the native minifier binaries (lightningcss/esbuild). The
+    // stylesheet is small, so the size difference is negligible.
+    cssMinify: false,
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),

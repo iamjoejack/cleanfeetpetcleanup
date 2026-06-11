@@ -26,15 +26,45 @@ const quoteForm = document.getElementById('quote-form');
 const formSuccess = document.getElementById('form-success');
 
 if (quoteForm && formSuccess) {
-    quoteForm.addEventListener('submit', (e) => {
+    quoteForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Hide form and show success message
-        quoteForm.style.display = 'none';
-        formSuccess.style.display = 'block';
-        
-        // In a real app, you'd send the data here
-        console.log('Form submitted successfully');
+        const submitBtn = quoteForm.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        submitBtn.disabled = true;
+
+        const formData = new FormData(quoteForm);
+        // FormSubmit delivers the submission straight to the inbox below.
+        // No API key or server needed. The very first submission triggers a
+        // one-time "Activate Form" email that must be clicked once.
+        formData.append('_subject', 'New quote request from the Clean Feet website');
+        formData.append('_template', 'table');
+
+        try {
+            const response = await fetch('https://formsubmit.co/ajax/cleanfeetpetcleanup@gmail.com', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Hide form and show success message
+                quoteForm.style.display = 'none';
+                formSuccess.style.display = 'block';
+                console.log('Form submitted successfully');
+            } else {
+                alert("Oops! There was a problem submitting your form. Please try again or email us directly.");
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        } catch (error) {
+            alert("Oops! There was a problem submitting your form. Please try again or email us directly.");
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+        }
     });
 }
 
@@ -52,7 +82,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 top: offsetPosition,
                 behavior: "smooth"
             });
-            
+
             // Close mobile menu if open
             if (navLinks.classList.contains('active')) {
                 navLinks.classList.remove('active');
@@ -106,7 +136,7 @@ function renderPayPalButton(price, planName) {
     if (paypalContainer) paypalContainer.innerHTML = '';
 
     window.paypal.Buttons({
-        createOrder: function(data, actions) {
+        createOrder: function (data, actions) {
             return actions.order.create({
                 purchase_units: [{
                     description: planName,
@@ -117,8 +147,8 @@ function renderPayPalButton(price, planName) {
                 }]
             });
         },
-        onApprove: function(data, actions) {
-            return actions.order.capture().then(function(details) {
+        onApprove: function (data, actions) {
+            return actions.order.capture().then(function (details) {
                 // Show success in modal first
                 modalTitle.textContent = 'Payment Successful!';
                 modalDesc.textContent = 'Redirecting you to provide your service details...';
@@ -129,14 +159,14 @@ function renderPayPalButton(price, planName) {
                         <p style="margin-top: 0.5rem; opacity: 0.8;">One moment while we redirect you...</p>
                     </div>
                 `;
-                
+
                 // Redirect after 2 seconds
                 setTimeout(() => {
                     window.location.href = `/contact.html?payment=success&name=${encodeURIComponent(details.payer.name.given_name)}&plan=${encodeURIComponent(planName)}`;
                 }, 2500);
             });
         },
-        onError: function(err) {
+        onError: function (err) {
             console.error('PayPal Error:', err);
             alert('Something went wrong with the payment. Please try again.');
         }
@@ -148,7 +178,7 @@ const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('payment') === 'success') {
     const contactHeader = document.querySelector('.contact-hero h1') || document.querySelector('.section-title h2');
     const contactSub = document.querySelector('.contact-hero p') || document.querySelector('.section-title p');
-    
+
     if (contactHeader) contactHeader.innerHTML = 'Payment <span>Received!</span>';
     if (contactSub) {
         contactSub.innerHTML = `<strong style="color: var(--primary); display: block; margin-bottom: 1rem; font-size: 1.2rem;">Thank you for your purchase!</strong> Please fill out the form below with your address and service details to complete your setup.`;
