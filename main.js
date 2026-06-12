@@ -38,8 +38,11 @@ if (quoteForm && formSuccess) {
         // FormSubmit delivers the submission straight to the inbox below.
         // No API key or server needed. The very first submission triggers a
         // one-time "Activate Form" email that must be clicked once.
-        formData.append('_subject', 'New quote request from the Clean Feet website');
+        formData.append('_subject', 'New lead from cleanfeetpetcleanup.com');
         formData.append('_template', 'table');
+        // Reply-to the customer so the owner can reply from Gmail in one click.
+        const customerEmail = formData.get('email');
+        if (customerEmail) formData.append('_replyto', customerEmail);
 
         try {
             const response = await fetch('https://formsubmit.co/ajax/cleanfeetpetcleanup@gmail.com', {
@@ -50,7 +53,15 @@ if (quoteForm && formSuccess) {
                 }
             });
 
-            if (response.ok) {
+            const data = await response.json().catch(() => ({}));
+            // FormSubmit returns success === "true" (string) ONLY once the form
+            // has been activated. Before activation it returns "false" with an
+            // HTTP 200, so checking response.ok alone would falsely report
+            // success and silently drop the lead. This means the success message
+            // now doubles as a live activation check.
+            const delivered = response.ok && (data.success === 'true' || data.success === true);
+
+            if (delivered) {
                 // Hide form and show success message
                 quoteForm.style.display = 'none';
                 formSuccess.style.display = 'block';
